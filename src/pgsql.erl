@@ -9,6 +9,8 @@
 -export([close/2, close/3, sync/1]).
 -export([with_transaction/2]).
 
+-define(PGSQL_TIMEOUT,25000).
+
 -include("pgsql.hrl").
 
 %% -- client interface --
@@ -105,6 +107,8 @@ with_transaction(C, F) ->
         {ok, [], []} = squery(C, "COMMIT"),
         R
     catch
+        _:{error,client_timeout}->
+            {abort, client_timeout};
         _:Why ->
             squery(C, "ROLLBACK"),
             {rollback, Why}
@@ -149,6 +153,8 @@ receive_result(C, Cols, Rows) ->
             throw({error, timeout});
         {'EXIT', C, _Reason} ->
             throw({error, closed})
+    after ?PGSQL_TIMEOUT ->
+            throw({error, client_timeout})
     end.
 
 receive_extended_result(C)->
