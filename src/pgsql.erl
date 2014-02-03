@@ -1,6 +1,7 @@
 %%% Copyright (C) 2008 - Will Glozer.  All rights reserved.
 
 -module(pgsql).
+-compile([{parse_transform, lager_transform}]).
 
 -export([connect/2, connect/3, connect/4, close/1]).
 -export([get_parameter/2, squery/2, equery/2, equery/3]).
@@ -107,10 +108,11 @@ with_transaction(C, F) ->
         {ok, [], []} = squery(C, "COMMIT"),
         R
     catch
-        _:{error,client_timeout}->
-            {abort, client_timeout};
+        _:{badmatch,{error,client_timeout}}->
+            throw({abort, client_timeout});
         _:Why ->
-            squery(C, "ROLLBACK"),
+            lager:info("pgsql_with_transaction_1:~p",[Why]),
+            squery(C, "ROLLBACK"), 
             {rollback, Why}
     end.
 
