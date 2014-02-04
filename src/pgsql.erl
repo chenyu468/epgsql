@@ -104,14 +104,15 @@ sync(C) ->
 %% misc helper functions
 with_transaction(C, F) ->
     try {ok, [], []} = squery(C, "BEGIN"),
-        R = F(C),
-        {ok, [], []} = squery(C, "COMMIT"),
-        R
+         R = F(C),
+         lager:info("pgsql_with_transaction_1_commit:~p",[C]),
+         {ok, [], []} = squery(C, "COMMIT"),
+         R
     catch
         _:{badmatch,{error,client_timeout}}->
             throw({abort, client_timeout});
         _:Why ->
-            lager:info("pgsql_with_transaction_1:~p",[Why]),
+            lager:info("pgsql_with_transaction_2:~p",[Why]),
             squery(C, "ROLLBACK"), 
             {rollback, Why}
     end.
