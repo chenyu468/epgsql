@@ -118,7 +118,7 @@ code_change(_Old_Vsn, State_Name, State, _Extra) ->
 %% -- states --
 
 startup({connect, Host, Username, Password, Opts}, From, State) ->
-    Timeout = proplists:get_value(timeout, Opts, 5000),
+    Timeout = proplists:get_value(timeout, Opts, 10000),
     Async   = proplists:get_value(async, Opts, undefined),
     case pgsql_sock:start_link(self(), Host, Username, Opts) of
         {ok, Sock} ->
@@ -132,7 +132,7 @@ startup({connect, Host, Username, Password, Opts}, From, State) ->
             {next_state, auth, State2, Timeout};
         Error ->
             {stop, normal, Error, State}
-    end.
+    end. 
 
 %% AuthenticationOk
 auth({$R, <<0:?int32>>}, State) ->
