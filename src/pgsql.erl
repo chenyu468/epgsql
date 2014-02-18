@@ -112,7 +112,7 @@ with_transaction(C, F) ->
         _:{badmatch,{error,client_timeout}}->
             throw({abort, client_timeout});
         _:Why ->
-            lager:info("pgsql_with_transaction_2:~p",[Why]),
+            lager:info("pgsql_with_transaction_2:~p~n~p~n~p",[C,F,Why]),
             squery(C, "ROLLBACK"), 
             {rollback, Why}
     end.
