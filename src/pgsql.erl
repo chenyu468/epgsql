@@ -105,14 +105,14 @@ sync(C) ->
 with_transaction(C, F) ->
     try {ok, [], []} = squery(C, "BEGIN"),
          R = F(C),
-         lager:info("pgsql_with_transaction_1_commit:~p",[C]),
+         %% lager:info("pgsql_with_transaction_1_commit:~p",[C]),
          {ok, [], []} = squery(C, "COMMIT"),
          R
     catch
         _:{badmatch,{error,client_timeout}}->
             throw({abort, client_timeout});
         _:Why ->
-            lager:info("pgsql_with_transaction_2:~p~n~p~n~p",[C,F,Why]),
+            %% lager:info("pgsql_with_transaction_2:~p~n~p~n~p",[C,F,Why]),
             squery(C, "ROLLBACK"), 
             {rollback, Why}
     end.
@@ -140,6 +140,7 @@ receive_result(C, Cols, Rows) ->
         {pgsql, C, {columns, Cols2}} ->
             receive_result(C, Cols2, Rows);
         {pgsql, C, {data, Row}} ->
+            %% lager:debug("_143:~n\t~p",[Row]),
             receive_result(C, Cols, [Row | Rows]);
         {pgsql, C, {error, _E} = Error} ->
             Error;

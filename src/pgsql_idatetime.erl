@@ -1,6 +1,7 @@
 %%% Copyright (C) 2008 - Will Glozer.  All rights reserved.
 
 -module(pgsql_idatetime).
+%% -compile([{parse_transform, lager_transform}]).
 
 -export([decode/2, encode/2]).
 
@@ -21,6 +22,23 @@ decode(date, <<J:?int32>>)                         -> j2date(?postgres_epoc_jdat
 decode(time, <<N:?int64>>)                         -> i2time(N);
 decode(timetz, <<N:?int64, TZ:?int32>>)            -> {i2time(N), TZ};
 decode(timestamp, <<N:?int64>>)                    -> i2timestamp(N);
+%% decode(timestamp, %% <<Y1:8/bit,Y2:8,Y3:8,Y4:8,
+%%        <<Y:32/binary,
+%%                     "-",M1:8,M2:8,"-",D1:8,D2:8,
+%%                   " ",
+%%                   H1:8,H2:8,":",MI1:8,MI2:8,":",S1:8,S2:8>>) ->
+%%     lager:debug("_26:~n\t~p,~n\t~p",[Y,M1]);
+
+   %%  Y1*10+Y2;
+
+decode(timestamp, <<Y:4/binary,"-",M:2/binary,"-",D:2/binary," ",
+                  H:2/binary,":",Mi:2/binary,":",S:2/binary>>) ->
+    %% lager:debug("_26:~n\t~p,~n\t~p~n\t~p,~n\t~p~n\t~p,~n\t~p",
+    %%             [Y,M,D,H,Mi,S]),
+    {{binary_to_integer(Y),binary_to_integer(M),binary_to_integer(D)},
+     {binary_to_integer(H),binary_to_integer(Mi),binary_to_integer(S)}
+    };
+
 decode(timestamptz, <<N:?int64>>)                  -> i2timestamp(N);
 decode(interval, <<N:?int64, D:?int32, M:?int32>>) -> {i2time(N), D, M}.
 
@@ -30,6 +48,9 @@ encode(timetz, {T, TZ}) -> <<12:?int32, (time2i(T)):?int64, TZ:?int32>>;
 encode(timestamp, TS)   -> <<8:?int32, (timestamp2i(TS)):?int64>>;
 encode(timestamptz, TS) -> <<8:?int32, (timestamp2i(TS)):?int64>>;
 encode(interval, {T, D, M}) -> <<16:?int32, (time2i(T)):?int64, D:?int32, M:?int32>>.
+
+
+    
 
 j2date(N) ->
     J = N + 32044,

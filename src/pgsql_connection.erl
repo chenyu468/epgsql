@@ -1,6 +1,7 @@
 %%% Copyright (C) 2008 - Will Glozer.  All rights reserved.
 
 -module(pgsql_connection).
+-compile([{parse_transform, lager_transform}]).
 
 -behavior(gen_fsm).
 
@@ -52,9 +53,11 @@ squery(C, Sql) ->
     gen_fsm:sync_send_event(C, {squery, Sql}, infinity).
 
 equery(C, Statement, Parameters) ->
+    %% lager:debug("55:~n\t~p~n\t~p",[Statement,Parameters]),
     gen_fsm:sync_send_event(C, {equery, Statement, Parameters}, infinity).
 
 parse(C, Name, Sql, Types) ->
+    lager:debug("_60"),
     gen_fsm:sync_send_event(C, {parse, Name, Sql, Types}, infinity).
 
 bind(C, Statement, PortalName, Parameters) ->
@@ -216,9 +219,11 @@ ready(_Msg, State) ->
 
 %% execute simple query
 ready({squery, Sql}, From, State) ->
+    lager:debug("_222:~n\t~p",[State]),
     #state{timeout = Timeout} = State,
     send(State, $Q, [Sql, 0]),
     State2 = State#state{statement = #statement{}, reply_to = From},
+    lager:debug("_226:~n\t~p",[State2]),
     {reply, ok, querying, State2, Timeout};
 
 %% execute extended query
@@ -243,6 +248,7 @@ ready({get_parameter, Name}, _From, State) ->
 
 ready({parse, Name, Sql, Types}, From, State) ->
     #state{timeout = Timeout} = State,
+    lager:debug("_248:~n\t~p~n\t~p",[Sql,Types]),
     Bin = encode_types(Types),
     send(State, $P, [Name, 0, Sql, 0, Bin]),
     send(State, $D, [$S, Name, 0]),
@@ -310,13 +316,16 @@ querying({$3, <<>>}, State) ->
 querying({$T, <<Count:?int16, Bin/binary>>}, State) ->
     #state{timeout = Timeout} = State,
     Columns = decode_columns(Count, Bin),
+    lager:debug("_319:~n\t~p~n\t~p",[Bin,Columns]),
     S2 = (State#state.statement)#statement{columns = Columns},
     notify(State, {columns, Columns}),
     {next_state, querying, State#state{statement = S2}, Timeout};
 
 %% DataRow
-querying({$D, <<_Count:?int16, Bin/binary>>}, State) ->
+querying({$D, <<Count:?int16, Bin/binary>>}, State) ->
+    lager:debug("_321:~n\t~p~n\t~p",[Count,Bin]),
     #state{timeout = Timeout, statement = #statement{columns = Columns}} = State,
+    lager:debug("_323:~n\t~p",[Columns]),
     Data = decode_data(Columns, Bin),
     notify(State, {data, Data}),
     {next_state, querying, State, Timeout};
@@ -402,6 +411,7 @@ binding({$Z, <<Status:8>>}, State) ->
 describing({$t, <<_Count:?int16, Bin/binary>>}, State) ->
     #state{timeout = Timeout} = State,
     Types = [pgsql_types:oid2type(Oid) || <<Oid:?int32>> <= Bin],
+    lager:debug("_413:~n\t~p~n\t~p",[Bin,Types]),
     S2 = (State#state.statement)#statement{types = Types},
     {next_state, describing, State#state{statement = S2}, Timeout};
 
@@ -409,6 +419,7 @@ describing({$t, <<_Count:?int16, Bin/binary>>}, State) ->
 describing({$T, <<Count:?int16, Bin/binary>>}, State) ->
     Columns = decode_columns(Count, Bin),
     Columns2 = [C#column{format = format(C#column.type)} || C <- Columns],
+    lager:debug("_421:~n\t~p~n\t~p",[Bin,Columns2]),
     S2 = (State#state.statement)#statement{columns = Columns2},
     gen_fsm:reply(State#state.reply_to, {ok, S2}),
     {next_state, ready, State};
@@ -536,7 +547,8 @@ decode_data([], _Bin, Acc) ->
     list_to_tuple(lists:reverse(Acc));
 decode_data([_C | T], <<-1:?int32, Rest/binary>>, Acc) ->
     decode_data(T, Rest, [null | Acc]);
-decode_data([C | T], <<Len:?int32, Value:Len/binary, Rest/binary>>, Acc) ->
+decode_data([C | T],Data = <<Len:?int32, Value:Len/binary, Rest/binary>>, Acc) ->
+    lager:debug("_544:~n\t~p~n\t~p~n\t~p~n\t~p",[Data,C,Len,Value]),
     case C of
         #column{type = Type, format = 1}   -> Value2 = pgsql_binary:decode(Type, Value);
         #column{}                          -> Value2 = Value

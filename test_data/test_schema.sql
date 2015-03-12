@@ -37,6 +37,7 @@ CREATE TABLE test_table1 (id integer primary key, value text);
 
 INSERT INTO test_table1 (id, value) VALUES (1, 'one');
 INSERT INTO test_table1 (id, value) VALUES (2, 'two');
+INSERT INTO test_table1 (id, value) VALUES (3001, '3001 number');
 
 CREATE TABLE test_table2 (
   c_bool bool,
