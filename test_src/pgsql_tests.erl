@@ -9,6 +9,7 @@
 -include("pgsql.hrl").
 
 -define(host, "pgc1.auto-library.cn").
+%% -define(host, "pgd1.auto-library.cn").
 -define(port, 5432).
 
 -define(ssl_apps, [crypto, public_key, ssl]).
