@@ -82,11 +82,15 @@ connect_with_client_cert_test_a() ->
 select_test_a() ->
     with_connection(
       fun(C) ->
-             %% {ok, Cols, Rows} = pgsql:squery(C, "select * from test_table1"),
+              Other = {2,3,4},
+              A = love_misc:write_term(Other),
+              B = love_misc:format_hex(A),
+              C_data = love_sql:quote("\\x" ++ B),
+              {ok, _} = pgsql:squery(C, 
+                                     io_lib:format("update test_table1 set c6 = ~s where id = 6000000",
+                                                   [C_data])),
+              %% {ok, Cols, Rows} = pgsql:squery(C, "select * from test_table1"),
               {ok, Cols, Rows} = pgsql:equery(C, "select * from test_table1"),
-              %% [#column{name = <<"id">>, type = int4, size = 4},
-              %%  #column{name = <<"value">>, type = text, size = -1}] = Cols,
-              %% [{<<"1">>, <<"one">>}, {<<"2">>, <<"two">>}] = Rows
               lager:debug("_86:~n\t~p~n\t~p",[Cols,Rows])
       end).
 

@@ -1,6 +1,7 @@
 %%% Copyright (C) 2008 - Will Glozer.  All rights reserved.
 
 -module(pgsql_binary).
+-compile([{parse_transform, lager_transform}]). 
 
 -export([encode/2, decode/2, supports/1]).
 
@@ -37,14 +38,64 @@ encode(textarray, L) when is_list(L)        -> encode_array(text, L);
 encode(Type, L) when is_list(L)             -> encode(Type, list_to_binary(L));
 encode(_Type, _Value)                       -> {error, unsupported}.
 
-decode(bool, <<1:1/big-signed-unit:8>>)     -> true;
-decode(bool, <<0:1/big-signed-unit:8>>)     -> false;
+%% decode(bool, <<1:1/big-signed-unit:8>>)     -> true;
+%% decode(bool, <<0:1/big-signed-unit:8>>)     -> false;
+%% decode(bpchar, <<C:1/big-unsigned-unit:8>>) -> C;
+%% decode(int2, <<N:1/big-signed-unit:16>>)    -> N;
+%% decode(int4, <<N:1/big-signed-unit:32>>)    -> N;
+%% decode(int8, <<N:1/big-signed-unit:64>>)    -> N;
+%% decode(float4, <<N:1/big-float-unit:32>>)   -> N;
+%% decode(float8, <<N:1/big-float-unit:64>>)   -> N;
+%% decode(record, <<_:?int32, Rest/binary>>)   -> list_to_tuple(decode_record(Rest, []));
+%% decode(time = Type, B)                      -> ?datetime:decode(Type, B);
+%% decode(timetz = Type, B)                    -> ?datetime:decode(Type, B);
+%% decode(date = Type, B)                      -> ?datetime:decode(Type, B);
+%% decode(timestamp = Type, B)                 -> ?datetime:decode(Type, B);
+%% decode(timestamptz = Type, B)               -> ?datetime:decode(Type, B);
+%% decode(interval = Type, B)                  -> ?datetime:decode(Type, B);
+%% decode(boolarray, B)                        -> decode_array(B);
+%% decode(int2array, B)                        -> decode_array(B);
+%% decode(int4array, B)                        -> decode_array(B);
+%% decode(int8array, B)                        -> decode_array(B);
+%% decode(float4array, B)                      -> decode_array(B);
+%% decode(float8array, B)                      -> decode_array(B);
+%% decode(chararray, B)                        -> decode_array(B);
+%% decode(textarray, B)                        -> decode_array(B);
+%% decode(_Other, Bin)                         -> Bin.
+
+%% decode(bool, <<1:1/big-signed-unit:8>>)     -> true;
+%% decode(bool, <<0:1/big-signed-unit:8>>)     -> false;
+
+decode(bool, <<N/binary>>)     -> 
+    case list_to_atom(binary_to_list(N)) of
+        t ->
+            true;
+        f ->
+            false
+                end;
+
+%% decode(bool, <<0:1/big-signed-unit:8>>)     -> false;
+
 decode(bpchar, <<C:1/big-unsigned-unit:8>>) -> C;
-decode(int2, <<N:1/big-signed-unit:16>>)    -> N;
-decode(int4, <<N:1/big-signed-unit:32>>)    -> N;
-decode(int8, <<N:1/big-signed-unit:64>>)    -> N;
-decode(float4, <<N:1/big-float-unit:32>>)   -> N;
-decode(float8, <<N:1/big-float-unit:64>>)   -> N;
+%% decode(int2, <<N:1/big-signed-unit:16>>)    -> N;
+%% decode(int4, <<N:1/big-signed-unit:32>>)    -> N;
+%% decode(int8, <<N:1/big-signed-unit:64>>)    -> N;
+decode(int2, <<N/binary>>)    -> binary_to_integer(N);
+decode(int4, <<N/binary>>)    -> binary_to_integer(N);
+decode(int8, <<N/binary>>)    -> binary_to_integer(N);
+
+
+%% decode(float4, <<N:1/big-float-unit:32>>)   -> N;
+%% decode(float8, <<N:1/big-float-unit:64>>)   -> N;
+
+decode(float4, <<N/binary>>)   -> binary_to_float(N);
+decode(float8, <<N/binary>>)   -> 
+    try
+        binary_to_float(N)
+    catch _:_-> 
+            binary_to_integer(N) * 1.0
+    end;
+
 decode(record, <<_:?int32, Rest/binary>>)   -> list_to_tuple(decode_record(Rest, []));
 decode(time = Type, B)                      -> ?datetime:decode(Type, B);
 decode(timetz = Type, B)                    -> ?datetime:decode(Type, B);
@@ -58,9 +109,21 @@ decode(int4array, B)                        -> decode_array(B);
 decode(int8array, B)                        -> decode_array(B);
 decode(float4array, B)                      -> decode_array(B);
 decode(float8array, B)                      -> decode_array(B);
-decode(chararray, B)                        -> decode_array(B);
-decode(textarray, B)                        -> decode_array(B);
-decode(_Other, Bin)                         -> Bin.
+decode(chararray, B)                        -> 
+    lager:debug("_101"),
+    decode_array(B);
+
+decode(textarray, B)                        -> 
+    lager:debug("_102"),
+    decode_array(B);
+
+decode(bytea, B)->
+    %% love_sql:parse_binary_data(B);
+    B;
+
+decode(Other, Bin)                         -> 
+    lager:debug("_103:~n\t~p",[Other]),
+    Bin.
 
 encode_array(Type, A) ->
     {Data, {NDims, Lengths}} = encode_array(Type, A, 0, []),

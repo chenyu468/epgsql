@@ -231,10 +231,10 @@ ready({squery, Sql}, From, State) ->
 ready({equery, Statement, Parameters}, From, State) ->
     #state{timeout = Timeout} = State,
     #statement{name = StatementName, columns = Columns} = Statement,
-    lager:debug("_233:~n\t~p~n\t~p",[Parameters,Columns]),
+    %% lager:debug("_233:~n\t~p~n\t~p",[Parameters,Columns]),
     Bin1 = encode_parameters(Parameters),
     Bin2 = encode_formats(Columns),
-    lager:debug("_237:~n\t~p~n\t~p",[Bin1,Bin2]),
+    %% lager:debug("_237:~n\t~p~n\t~p",[Bin1,Bin2]),
     send(State, $B, ["", 0, StatementName, 0, Bin1, Bin2]),
     send(State, $E, ["", 0, <<0:?int32>>]),
     send(State, $C, [$S, "", 0]),
@@ -608,15 +608,15 @@ encode_types([Type | T], Count, Acc) ->
 
 %% encode column formats
 encode_formats(Columns) ->
-    lager:debug("_611:~n\t~p",[Columns]),
-    %% encode_formats(Columns, 0, <<>>).
-    <<0,2,1,3,1,3>>.
+    %% lager:debug("_611:~n\t~p",[Columns]),
+    encode_formats(Columns, 0, <<>>).
+    %% <<0,2,1,3,1,3>>.
 
 encode_formats([], Count, Acc) -> %% 这里最后加上头部，一共有几个字段，
     <<Count:?int16, Acc/binary>>;
 
 encode_formats([#column{format = Format} | T], Count, Acc) ->
-    lager:debug("_616:~n\t~p~n\t~p",[Acc,Format]),
+    %% lager:debug("_616:~n\t~p~n\t~p",[Acc,Format]),
     encode_formats(T, Count + 1, <<Acc/binary, Format:?int16>>).
 
 format(Type) ->
