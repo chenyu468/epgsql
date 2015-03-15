@@ -35,6 +35,21 @@ GRANT ALL ON DATABASE epgsql_test_db2 to epgsql_test;
 
 CREATE TABLE test_table1 (id integer primary key, value text);
 
+create table test_table1 (id integer primary key,
+       c1 varchar(50),
+       c2 float,
+       c3 timestamp(6),
+       c4 boolean,
+       c5 uuid,
+       c6 bytea,
+       c7 money
+       );
+
+insert into test_table1 (id,c1,c2,c3,c4,c5,c6,c7) values
+       (6000000,'value 1',3.4,'2012/2/3 12:03:04',true,
+                       '02a7ca08-df99-45c5-84d9-c6b3b8b19771',
+                       null,3.0);
+
 INSERT INTO test_table1 (id, value) VALUES (1, 'one');
 INSERT INTO test_table1 (id, value) VALUES (2, 'two');
 INSERT INTO test_table1 (id, value) VALUES (3001, '3001 number');

@@ -74,20 +74,10 @@ decode(bool, <<N/binary>>)     ->
             false
                 end;
 
-%% decode(bool, <<0:1/big-signed-unit:8>>)     -> false;
-
 decode(bpchar, <<C:1/big-unsigned-unit:8>>) -> C;
-%% decode(int2, <<N:1/big-signed-unit:16>>)    -> N;
-%% decode(int4, <<N:1/big-signed-unit:32>>)    -> N;
-%% decode(int8, <<N:1/big-signed-unit:64>>)    -> N;
 decode(int2, <<N/binary>>)    -> binary_to_integer(N);
 decode(int4, <<N/binary>>)    -> binary_to_integer(N);
 decode(int8, <<N/binary>>)    -> binary_to_integer(N);
-
-
-%% decode(float4, <<N:1/big-float-unit:32>>)   -> N;
-%% decode(float8, <<N:1/big-float-unit:64>>)   -> N;
-
 decode(float4, <<N/binary>>)   -> binary_to_float(N);
 decode(float8, <<N/binary>>)   -> 
     try
@@ -121,8 +111,8 @@ decode(bytea, B)->
     %% love_sql:parse_binary_data(B);
     B;
 
-decode(Other, Bin)                         -> 
-    lager:debug("_103:~n\t~p",[Other]),
+decode(_Other, Bin)                         -> 
+    %% lager:debug("_103:~n\t~p",[Other]),
     Bin.
 
 encode_array(Type, A) ->
