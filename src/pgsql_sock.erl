@@ -1,7 +1,7 @@
 %%% Copyright (C) 2009 - Will Glozer.  All rights reserved.
 
 -module(pgsql_sock).
-
+-compile([{parse_transform, lager_transform}]).
 -behavior(gen_server).
 
 -export([start_link/4, send/2, send/3, cancel/3]).
@@ -48,8 +48,13 @@ init([C, Host, Username, Opts]) ->
 
     Port = proplists:get_value(port, Opts, 5432),
     SockOpts = [{active, false}, {packet, raw}, binary, {nodelay, true}],
-    {ok, S} = gen_tcp:connect(Host, Port, SockOpts),
-
+    {ok, S} = case gen_tcp:connect(Host, Port, SockOpts) of
+                  {ok, S_a} ->
+                      {ok, S_a};
+                  {error,econnrefused} ->
+                      lager:alert("pg connection refused"),
+                      throw("pg_connection_refused")
+              end,
     State = #state{
       c    = C,
       mod  = gen_tcp,
