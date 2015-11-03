@@ -121,7 +121,6 @@ code_change(_Old_Vsn, State_Name, State, _Extra) ->
 %% -- states --
 
 startup({connect, Host, Username, Password, Opts}, From, State) ->
-    lager:debug("_124:~n\t~p",[Opts]),
     Timeout = proplists:get_value(timeout, Opts, 30000),
     Async   = proplists:get_value(async, Opts, undefined),
     case pgsql_sock:start_link(self(), Host, Username, Opts) of
@@ -627,7 +626,7 @@ format(Type) ->
 
 %% encode parameters
 encode_parameters(Parameters) ->
-    lager:debug("_626:~n\t~p",[Parameters]),
+    %% lager:debug("_626:~n\t~p",[Parameters]),
     encode_parameters(Parameters, 0, <<>>, <<>>).
 
 encode_parameters([], Count, Formats, Values) ->
@@ -635,7 +634,7 @@ encode_parameters([], Count, Formats, Values) ->
 
 encode_parameters([P | T], Count, Formats, Values) ->
     {Format, Value} = encode_parameter(P),
-    lager:debug("_633:~n\t~p~n\t~p",[Formats,Values]),
+    %% lager:debug("_633:~n\t~p~n\t~p",[Formats,Values]),
     Formats2 = <<Formats/binary, Format:?int16>>,
     Values2 = <<Values/binary, Value/binary>>,
     encode_parameters(T, Count + 1, Formats2, Values2).
