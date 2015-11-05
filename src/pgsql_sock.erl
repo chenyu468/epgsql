@@ -53,7 +53,13 @@ init([C, Host, Username, Opts]) ->
                       {ok, S_a};
                   {error,econnrefused} ->
                       lager:alert("pg connection refused"),
-                      throw("pg_connection_refused")
+                      throw("pg_connection_error");
+                  {error,nxdomain} ->
+                      lager:alert("pg connection domain error"),
+                      throw("pg_connection_error");
+                  {error,Reason} ->
+                      lager:alert("pg_connection_other_reason:~n\t~p",[Reason]),
+                      throw("pg_connection_error")
               end,
     State = #state{
       c    = C,
