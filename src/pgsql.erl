@@ -34,7 +34,7 @@ get_parameter(C, Name) ->
     pgsql_connection:get_parameter(C, Name).
 
 squery(C, Sql) ->
-    lager:debug("_37:~n\t~ts",[Sql]),
+    %% lager:debug("_37:~n\t~ts",[Sql]),
     ok = pgsql_connection:squery(C, Sql),
     case receive_results(C, []) of
         [Result] -> Result;
